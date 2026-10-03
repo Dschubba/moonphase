@@ -21,6 +21,19 @@ stages:
 - performance
 - cleanup
 - secret-detection
+compile_moonphase:
+  stage: build
+  image: gcc:14
+  before_script:
+  - apt-get update
+  - apt-get install -y --no-install-recommends cmake
+  script:
+  - cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+  - cmake --build build --parallel
+  artifacts:
+    paths:
+    - build/moonphase
+    expire_in: 1 week
 sast:
   stage: test
 include:

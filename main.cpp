@@ -1,33 +1,18 @@
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cmath>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <locale>
+#include <optional>
+#include <string>
+
+#include "main.h"
 
 namespace {
-    constexpr double kSynodicMonth = 29.530588853;
-    constexpr double kJulianDayAtUnixEpoch = 2440587.5;
-    constexpr double kPi = 3.14159265358979323846;
-
-    // Beobachterposition: München
-    constexpr std::string_view kObserverLocation = "München";
-    constexpr double kObserverLatitudeDeg = 47.135125;
-    constexpr double kObserverLongitudeDeg = 11.581981;
-    constexpr double kObserverElevationKm = 0.519; // 519 m
-
-    constexpr double kEarthRadiusKm = 6378.137;
-    constexpr double kEarthFlattening = 1.0 / 298.257223563;
-    constexpr double kAstronomicalUnitKm = 149597870.7;
-
-    constexpr double kNewMoonEnd = 1.84566;
-    constexpr double kWaxingCrescentEnd = 5.53699;
-    constexpr double kFirstQuarterEnd = 9.22831;
-    constexpr double kWaxingGibbousEnd = 12.91963;
-    constexpr double kFullMoonEnd = 16.61096;
-    constexpr double kWaningGibbousEnd = 20.30228;
-    constexpr double kLastQuarterEnd = 23.99361;
-    constexpr double kWaningCrescentEnd = 27.68493;
+    using namespace moonphase;
 
     using Vec3 = std::array<double, 3>;
 
@@ -159,29 +144,92 @@ namespace {
                  std::sin(lat)}};
     }
 
-    const char* phaseName(double age) {
+    double apparentLunarLimbAltitude(double julianDay) {
+        const double t = (julianDay - 2451545.0) / 36525.0;
+        const double obliquity = 23.439291 - 0.0130042 * t;
+        const double gmst = normalize(
+            280.46061837 + 360.98564736629 * (julianDay - 2451545.0) +
+                0.000387933 * t * t, 360.0);
+        const Body moon = moonPosition(t, obliquity);
+        const Observer observer = observerAt(gmst);
+        const Vec3 moonFromObserver = subtract(moon.equatorial, observer.position);
+        const double distance = length(moonFromObserver);
+        const double geometricAltitude = toDegrees(std::asin(std::clamp(
+            dot(moonFromObserver, observer.up) / distance, -1.0, 1.0)));
+        const double semidiameter = toDegrees(std::asin(kMoonRadiusKm / distance));
+        return geometricAltitude + semidiameter + kHorizonRefractionDeg;
+    }
+
+    std::optional<double> nextRiseSet(double startJulianDay, bool rising) {
+        double previousDay = startJulianDay;
+        double previousAltitude = apparentLunarLimbAltitude(previousDay);
+        constexpr int steps = static_cast<int>(kRiseSetSearchDays / kRiseSetStepDays);
+
+        for (int step = 1; step <= steps; ++step) {
+            const double currentDay = startJulianDay + step * kRiseSetStepDays;
+            const double currentAltitude = apparentLunarLimbAltitude(currentDay);
+            const bool crossed = rising
+                ? previousAltitude < 0.0 && currentAltitude >= 0.0
+                : previousAltitude > 0.0 && currentAltitude <= 0.0;
+
+            if (crossed) {
+                double low = previousDay;
+                double high = currentDay;
+                for (int iteration = 0; iteration < 40; ++iteration) {
+                    const double middle = (low + high) / 2.0;
+                    if (const double altitude = apparentLunarLimbAltitude(middle); (rising && altitude >= 0.0) || (!rising && altitude <= 0.0)) {
+                        high = middle;
+                    } else {
+                        low = middle;
+                    }
+                }
+                return (low + high) / 2.0;
+            }
+
+            previousDay = currentDay;
+            previousAltitude = currentAltitude;
+        }
+
+        return std::nullopt;
+    }
+
+    std::optional<std::tm> localTimeAt(double julianDay) {
+        const double unixSeconds = (julianDay - kJulianDayAtUnixEpoch) * 86400.0;
+        const auto eventTime = static_cast<std::time_t>(unixSeconds);
+        const std::tm* localTime = std::localtime(&eventTime);
+        if (localTime == nullptr) {
+            return std::nullopt;
+        }
+        return *localTime;
+    }
+
+    const char* localizedText(bool english, const char* german, const char* englishText) {
+        return english ? englishText : german;
+    }
+
+    const char* phaseName(double age, bool english) {
         if (age < kNewMoonEnd || age >= kWaningCrescentEnd) {
-            return "Neumond";
+            return localizedText(english, "Neumond", "New Moon");
         }
         if (age < kWaxingCrescentEnd) {
-            return "Zunehmende Sichel";
+            return localizedText(english, "Zunehmende Sichel", "Waxing Crescent");
         }
         if (age < kFirstQuarterEnd) {
-            return "Erstes Viertel";
+            return localizedText(english, "Erstes Viertel", "First Quarter");
         }
         if (age < kWaxingGibbousEnd) {
-            return "Zunehmender Mond";
+            return localizedText(english, "Zunehmender Mond", "Waxing Gibbous");
         }
         if (age < kFullMoonEnd) {
-            return "Vollmond";
+            return localizedText(english, "Vollmond", "Full Moon");
         }
         if (age < kWaningGibbousEnd) {
-            return "Abnehmender Mond";
+            return localizedText(english, "Abnehmender Mond", "Waning Gibbous");
         }
         if (age < kLastQuarterEnd) {
-            return "Letztes Viertel";
+            return localizedText(english, "Letztes Viertel", "Last Quarter");
         }
-        return "Abnehmende Sichel";
+        return localizedText(english, "Abnehmende Sichel", "Waning Crescent");
     }
 
     const char* phaseSymbol(double age) {
@@ -211,6 +259,14 @@ namespace {
 } // namespace
 
 int main() {
+    const std::locale systemLocale("");
+    std::locale::global(systemLocale);
+    std::cout.imbue(systemLocale);
+    std::cerr.imbue(systemLocale);
+    const std::string localeName = systemLocale.name();
+    const bool english = localeName.rfind("de", 0) != 0 &&
+                         localeName.rfind("German", 0) != 0;
+
     const auto now = std::chrono::system_clock::now();
     const double unixDays =
         std::chrono::duration<double>(now.time_since_epoch()).count() / 86400.0;
@@ -241,23 +297,59 @@ int main() {
     const double illumination = (1.0 + std::cos(phaseAngle)) * 50.0;
 
     const double altitude = toDegrees(std::asin(dot(moonFromObserver, observer.up) / moonDistance));
+    const std::optional<double> nextMoonrise = nextRiseSet(julianDay, true);
+    const std::optional<double> nextMoonset = nextRiseSet(julianDay, false);
 
     const std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
-    const std::tm* localDate = std::localtime(&currentTime);
-    if (localDate == nullptr) {
-        std::cerr << "Das aktuelle Datum konnte nicht ermittelt werden.\n";
+    const std::tm* localDatePointer = std::localtime(&currentTime);
+    if (localDatePointer == nullptr) {
+        std::cerr << localizedText(
+            english, "Das aktuelle Datum konnte nicht ermittelt werden.",
+            "The current date could not be determined.") << "\n";
         return 1;
     }
+    const std::tm localDate = *localDatePointer;
 
-    std::cout << "Mondphase am "
-              << std::put_time(localDate, "%d.%m.%Y um %H:%M:%S Uhr") << "\n"
-              << "Beobachtungsort: " << kObserverLocation << " ("
+    const char* location = english ? "Munich" : kObserverLocation.data();
+    std::cout << localizedText(english, "Mondphase am ", "Moon phase on ")
+              << std::put_time(&localDate, "%x %X") << "\n"
+              << localizedText(english, "Beobachtungsort: ", "Location: ")
+              << location << " ("
               << std::fixed << std::setprecision(4) << kObserverLatitudeDeg
-              << "° N, " << kObserverLongitudeDeg << "° O)\n"
-              << "Aktuelle Mondphase: " << phaseSymbol(age) << " "
-              << phaseName(age) << "\n"
+              << "° N, " << kObserverLongitudeDeg << "° "
+              << localizedText(english, "O", "E") << ")\n"
+              << localizedText(english, "Aktuelle Mondphase: ", "Current moon phase: ")
+              << phaseSymbol(age) << " " << phaseName(age, english) << "\n"
               << std::setprecision(1)
-              << "Beleuchtung: " << illumination << " %\n"
-              << "Höhe über dem Horizont: " << altitude << "° ("
-              << (altitude > 0.0 ? "sichtbar" : "unter dem Horizont") << ")\n";
+              << localizedText(english, "Beleuchtung: ", "Illumination: ")
+              << illumination << " %\n"
+              << localizedText(english, "Höhe über dem Horizont: ",
+                               "Altitude above horizon: ")
+              << altitude << "° ("
+              << localizedText(english, altitude > 0.0 ? "sichtbar" : "unter dem Horizont",
+                               altitude > 0.0 ? "visible" : "below the horizon") << ")\n"
+              << localizedText(english, "Alter: ", "Age: ") << age << " "
+              << localizedText(english, "Tage seit Neumond", "days since new moon") << "\n"
+              << localizedText(english, "Entfernung: ", "Distance: ")
+              << std::fixed << std::setprecision(0) << moonDistance << " km\n";
+
+    const auto printEvent = [english](const char* germanLabel, const char* englishLabel,
+                                      const std::optional<double>& eventDay) {
+        std::cout << localizedText(english, germanLabel, englishLabel);
+        if (!eventDay) {
+            std::cout << localizedText(english, "nicht in den nächsten 35 Tagen",
+                                       "not within the next 35 days") << "\n";
+            return;
+        }
+        const std::optional<std::tm> eventTime = localTimeAt(*eventDay);
+        if (!eventTime) {
+            std::cout << localizedText(english, "Zeitpunkt nicht darstellbar",
+                                       "time could not be represented") << "\n";
+            return;
+        }
+        std::cout << std::put_time(&*eventTime, "%x %X") << "\n";
+    };
+
+    printEvent("Mondaufgang: ", "Moonrise: ", nextMoonrise);
+    printEvent("Monduntergang: ", "Moonset: ", nextMoonset);
 }

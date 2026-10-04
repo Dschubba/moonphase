@@ -1,5 +1,5 @@
 pkgname=moonphase
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc='Moon phase and moonrise calculator'
 arch=('x86_64' 'aarch64')

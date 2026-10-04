@@ -3,6 +3,20 @@
 Ein kleines C++-Programm, das anhand des aktuellen Systemdatums die Mondphase
 und den prozentual beleuchteten Anteil der Mondscheibe näherungsweise berechnet.
 
+Die Berechnung bestimmt Position von Mond und Sonne nach Meeus
+(Astronomical Algorithms, Kap. 25 und 47, Hauptkorrekturterme) und berechnet die
+Beleuchtung topozentrisch für den Beobachtungsort. Ohne CLI-Angabe ist dies
+München (47,135125° N, 11,581981° O, 519 m). Zusätzlich wird die Höhe des Mondes
+über dem Horizont ausgegeben. Das Ergebnis ist eine Näherung und berücksichtigt
+keine atmosphärische Refraktion für die aktuelle Mondhöhe.
+
+Außerdem werden der nächste Mondaufgang und Monduntergang ab dem aktuellen
+Zeitpunkt in lokaler Systemzeit ausgegeben. Als Ereignis gilt der Auf- bzw.
+Untergang des sichtbaren oberen Mondrandes; dafür werden der scheinbare
+Mondradius und eine übliche Refraktionskorrektur am Horizont angenähert. Die
+Zeiten berücksichtigen weder örtliche Horizontabschattung noch aktuelle
+Wetterbedingungen und sind wegen der vereinfachten Mondposition nur Richtwerte.
+
 ## Kompilieren und starten
 
 Benötigt werden CMake 3.16 oder neuer sowie ein C++17-kompatibler Compiler:
@@ -12,6 +26,20 @@ cmake -S . -B build
 cmake --build build
 ./build/moonphase
 ```
+
+Mit `--location` lassen sich ein oder mehrere Beobachtungsorte angeben. Das
+Argument besteht aus Name, Breitengrad und Längengrad; die Höhe über dem
+Meeresspiegel in Metern ist optional und beträgt standardmäßig 0:
+
+```sh
+./build/moonphase \
+  --location "München,48.1372,11.5756,519" \
+  --location "Berlin,52.5200,13.4050"
+```
+
+Breiten- und Längengrade müssen im Bereich -90 bis 90 bzw. -180 bis 180 liegen;
+die Höhe muss mindestens 0 m betragen. Ohne `--location` wird weiterhin der
+Standardort München (47,135125° N, 11,581981° O, 519 m) verwendet.
 
 ## Pakete lokal erstellen
 
@@ -70,18 +98,3 @@ Pakete werden lokal auf der jeweiligen Zielplattform erstellt; GitLab-CI oder
 automatische Veröffentlichungen sind nicht eingerichtet. Unter Linux kann
 `cpack --config build/CPackConfig.cmake -G TGZ -B build/packages`
 ein generisches Archiv ohne Debian- oder RPM-Werkzeuge erstellen.
-
-Die Berechnung bestimmt Position von Mond und Sonne nach Meeus
-(Astronomical Algorithms, Kap. 25 und 47, Hauptkorrekturterme) und berechnet die
-Beleuchtung topozentrisch für den Beobachtungsort München
-(47,135125° N, 11,581981° O, 519 m). Zusätzlich wird die Höhe des Mondes über dem
-Horizont ausgegeben. Der Ort lässt sich über die `kObserver...`-Konstanten in
-`main.h` ändern. Das Ergebnis ist eine Näherung und berücksichtigt keine
-atmosphärische Refraktion für die aktuelle Mondhöhe.
-
-Außerdem werden der nächste Mondaufgang und Monduntergang ab dem aktuellen
-Zeitpunkt in lokaler Systemzeit ausgegeben. Als Ereignis gilt der Auf- bzw.
-Untergang des sichtbaren oberen Mondrandes; dafür werden der scheinbare
-Mondradius und eine übliche Refraktionskorrektur am Horizont angenähert. Die
-Zeiten berücksichtigen weder örtliche Horizontabschattung noch aktuelle
-Wetterbedingungen und sind wegen der vereinfachten Mondposition nur Richtwerte.

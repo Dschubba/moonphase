@@ -126,27 +126,29 @@ namespace moonphase {
         };
 
         // WGS84 observer position in the Earth-fixed equatorial frame.
-        Observer observerAt(double gmstDeg) {
-            const double lat = toRadians(kObserverLatitudeDeg);
+        Observer observerAt(double gmstDeg, const ObserverLocation& location) {
+            const double lat = toRadians(location.latitudeDeg);
             const double e2 = kEarthFlattening * (2.0 - kEarthFlattening);
             const double n = kEarthRadiusKm /
                              std::sqrt(1.0 - e2 * std::sin(lat) * std::sin(lat));
-            const double rho = (n + kObserverElevationKm) * std::cos(lat);
-            const double z = (n * (1.0 - e2) + kObserverElevationKm) * std::sin(lat);
-            const double lst = gmstDeg + kObserverLongitudeDeg;
+            const double elevationKm = location.elevationMeters / 1000.0;
+            const double rho = (n + elevationKm) * std::cos(lat);
+            const double z = (n * (1.0 - e2) + elevationKm) * std::sin(lat);
+            const double lst = gmstDeg + location.longitudeDeg;
             return {{rho * cosDeg(lst), rho * sinDeg(lst), z},
                     {std::cos(lat) * cosDeg(lst), std::cos(lat) * sinDeg(lst),
                      std::sin(lat)}};
         }
 
-        double apparentLunarLimbAltitude(double julianDay) {
+        double apparentLunarLimbAltitude(double julianDay,
+                                         const ObserverLocation& location) {
             const double t = (julianDay - 2451545.0) / 36525.0;
             const double obliquity = 23.439291 - 0.0130042 * t;
             const double gmst = normalize(
                 280.46061837 + 360.98564736629 * (julianDay - 2451545.0) +
                     0.000387933 * t * t, 360.0);
             const Body moon = moonPosition(t, obliquity);
-            const Observer observer = observerAt(gmst);
+            const Observer observer = observerAt(gmst, location);
             const Vec3 moonFromObserver = subtract(moon.equatorial, observer.position);
             const double distance = length(moonFromObserver);
             const double geometricAltitude = toDegrees(std::asin(std::clamp(
@@ -155,14 +157,16 @@ namespace moonphase {
             return geometricAltitude + semidiameter + kHorizonRefractionDeg;
         }
 
-        std::optional<double> nextRiseSet(double startJulianDay, bool rising) {
+        std::optional<double> nextRiseSet(double startJulianDay, bool rising,
+                                          const ObserverLocation& location) {
             double previousDay = startJulianDay;
-            double previousAltitude = apparentLunarLimbAltitude(previousDay);
+            double previousAltitude = apparentLunarLimbAltitude(previousDay, location);
             constexpr int steps = static_cast<int>(kRiseSetSearchDays / kRiseSetStepDays);
 
             for (int step = 1; step <= steps; ++step) {
                 const double currentDay = startJulianDay + step * kRiseSetStepDays;
-                const double currentAltitude = apparentLunarLimbAltitude(currentDay);
+                const double currentAltitude =
+                    apparentLunarLimbAltitude(currentDay, location);
                 const bool crossed = rising
                     ? previousAltitude < 0.0 && currentAltitude >= 0.0
                     : previousAltitude > 0.0 && currentAltitude <= 0.0;
@@ -172,7 +176,7 @@ namespace moonphase {
                     double high = currentDay;
                     for (int iteration = 0; iteration < 40; ++iteration) {
                         const double middle = (low + high) / 2.0;
-                        const double altitude = apparentLunarLimbAltitude(middle);
+                        const double altitude = apparentLunarLimbAltitude(middle, location);
                         if ((rising && altitude >= 0.0) ||
                             (!rising && altitude <= 0.0)) {
                             high = middle;
@@ -220,7 +224,7 @@ namespace moonphase {
         }
     }
 
-    CalculationResult calculate(double julianDay) {
+    CalculationResult calculate(double julianDay, const ObserverLocation& location) {
         const double t = (julianDay - 2451545.0) / 36525.0;
         const double obliquity = 23.439291 - 0.0130042 * t;
         const double gmst = normalize(
@@ -229,7 +233,7 @@ namespace moonphase {
 
         const Body moon = moonPosition(t, obliquity);
         const Body sun = sunPosition(t, obliquity);
-        const Observer observer = observerAt(gmst);
+        const Observer observer = observerAt(gmst, location);
 
         const double elongation = normalize(moon.eclipticLongitude -
                                              sun.eclipticLongitude, 360.0);
@@ -249,6 +253,14 @@ namespace moonphase {
             dot(moonFromObserver, observer.up) / moonDistance, -1.0, 1.0)));
 
         return {phaseForAge(age), age, illumination, altitude, moonDistance,
-                nextRiseSet(julianDay, true), nextRiseSet(julianDay, false)};
+                nextRiseSet(julianDay, true, location),
+                nextRiseSet(julianDay, false, location)};
+    }
+
+    CalculationResult calculate(double julianDay) {
+        const ObserverLocation defaultLocation{
+            std::string(kObserverLocation), kObserverLatitudeDeg, kObserverLongitudeDeg,
+            kObserverElevationKm * 1000.0};
+        return calculate(julianDay, defaultLocation);
     }
 }

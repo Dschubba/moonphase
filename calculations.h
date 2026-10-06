@@ -18,13 +18,13 @@ namespace moonphase {
     };
 
     struct CalculationResult {
-        Phase phase;
-        double ageDays;
-        double illuminationPercent;
-        double altitudeDeg;
-        double distanceKm;
-        std::optional<double> nextMoonriseJulianDay;
-        std::optional<double> nextMoonsetJulianDay;
+        Phase phase{};
+        double ageDays{};
+        double illuminationPercent{};
+        double altitudeDeg{};
+        double distanceKm{};
+        std::optional<double> nextMoonriseJulianDay{};
+        std::optional<double> nextMoonsetJulianDay{};
     };
 
     CalculationResult calculate(double julianDay, const ObserverLocation& observer);

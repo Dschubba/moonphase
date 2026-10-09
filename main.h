@@ -17,6 +17,7 @@ namespace moonphase {
     inline constexpr double kEarthFlattening = 1.0 / 298.257223563;
     inline constexpr double kAstronomicalUnitKm = 149597870.7;
     inline constexpr double kMoonRadiusKm = 1737.4;
+    inline constexpr double kSunRadiusKm = 695700.0;
     inline constexpr double kHorizonRefractionDeg = 34.0 / 60.0;
     inline constexpr double kRiseSetSearchDays = 35.0;
     inline constexpr double kRiseSetStepDays = 10.0 / 1440.0;

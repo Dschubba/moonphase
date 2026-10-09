@@ -17,6 +17,24 @@ Mondradius und eine übliche Refraktionskorrektur am Horizont angenähert. Die
 Zeiten berücksichtigen weder örtliche Horizontabschattung noch aktuelle
 Wetterbedingungen und sind wegen der vereinfachten Mondposition nur Richtwerte.
 
+Zusätzlich gibt das Programm die aktuelle topozentrische Sonnenhöhe und
+-entfernung sowie den nächsten Sonnenaufgang und Sonnenuntergang aus. Die
+Tages- und Nachtlänge beziehen sich auf den aktuellen lokalen Kalendertag und
+werden aus dem scheinbaren Sonnenrand einschließlich einer üblichen
+Horizontrefraktion berechnet. Hinter beiden Werten steht außerdem die
+Veränderung gegenüber dem Vortag. An Tagen mit Polartag oder Polarnacht wird die
+gesamte lokale Tageslänge als Tageslicht beziehungsweise Dunkelheit ausgewiesen. Sonnen- und
+Mondereignisse sind Näherungswerte und berücksichtigen keine örtliche
+Horizontabschattung oder Wetterbedingungen.
+
+Für den laufenden lokalen Kalendermonat werden außerdem besondere
+Mondereignisse aufgeführt: Blue Moons als zweiter Vollmond eines Monats oder
+als dritter Vollmond einer Jahreszeit mit vier Vollmonden, Supermonde
+(Vollmondentfernung unter 360.000 km) sowie am Beobachtungsort sichtbare
+Mondfinsternisse. Die Jahreszeiten werden näherungsweise mit den üblichen
+Kalendertagen für Tagundnachtgleichen und Sonnenwenden abgegrenzt; die
+berechneten Ereigniszeiten und Sichtbarkeiten sind ebenfalls Näherungswerte.
+
 ## Kompilieren und starten
 
 Benötigt werden CMake 3.16 oder neuer sowie ein C++17-kompatibler Compiler:

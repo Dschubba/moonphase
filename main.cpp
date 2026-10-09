@@ -160,9 +160,36 @@ int main(int argc, char* argv[]) {
         std::cout << std::put_time(&*eventTime, "%x %X") << "\n";
     };
 
+    const auto printDuration = [english](const char* germanLabel, const char* englishLabel,
+                                         double seconds, double changeSeconds) {
+        const long long totalSeconds = std::llround(seconds);
+        const long long changeTotalSeconds = std::llround(changeSeconds);
+        const long long durationMinutes = totalSeconds / 60;
+        const long long absoluteChange = std::abs(changeTotalSeconds);
+        const auto printDifference = [english](long long value) {
+            std::cout << value / 60 << " "
+                      << localizedText(english, "Min. ", "min. ")
+                      << std::setfill('0') << std::setw(2) << value % 60
+                      << localizedText(english, " Sek.", " sec.")
+                      << std::setfill(' ');
+        };
+        std::cout << localizedText(english, germanLabel, englishLabel);
+        std::cout << std::setfill('0') << std::setw(2) << durationMinutes / 60 << ":"
+                  << std::setw(2) << durationMinutes % 60 << " h ("
+                  << localizedText(english, "zum Vortag: ", "vs. previous day: ")
+                  << (changeTotalSeconds > 0 ? "+" : changeTotalSeconds < 0 ? "-" : "");
+        printDifference(absoluteChange);
+        std::cout << ")\n" << std::setfill(' ');
+    };
+
     for (std::size_t i = 0; i < locations.size(); ++i) {
         const ObserverLocation& location = locations[i];
-        const CalculationResult result = calculate(julianDay, location);
+        const auto
+        [phase, ageDays, illuminationPercent, altitudeDeg, distanceKm,
+         sunAltitudeDeg, sunDistanceKm, nextMoonriseJulianDay, nextMoonsetJulianDay,
+         nextSunriseJulianDay, nextSunsetJulianDay, daylightSeconds, nightSeconds,
+         daylightChangeSeconds, nightChangeSeconds, moonSpecialEvents] =
+            calculate(julianDay, location);
         const char* latitudeDirection = location.latitudeDeg < 0.0 ? "S" : "N";
         const char* longitudeDirection = location.longitudeDeg < 0.0
             ? "W"
@@ -178,27 +205,80 @@ int main(int argc, char* argv[]) {
                   << "° " << latitudeDirection << ", "
                   << std::abs(location.longitudeDeg) << "° " << longitudeDirection << ")\n"
                   << localizedText(english, "Aktuelle Mondphase: ", "Current moon phase: ")
-                  << result.phase.symbol << " "
-                  << localizedText(english, result.phase.germanName, result.phase.englishName)
+                  << phase.symbol << " "
+                  << localizedText(english, phase.germanName, phase.englishName)
                   << "\n"
                   << std::setprecision(1)
                   << localizedText(english, "Beleuchtung: ", "Illumination: ")
-                  << result.illuminationPercent << " %\n"
+                  << illuminationPercent << " %\n"
                   << localizedText(english, "Höhe über dem Horizont: ",
                                    "Altitude above horizon: ")
-                  << result.altitudeDeg << "° ("
+                  << altitudeDeg << "° ("
                   << localizedText(english,
-                                   result.altitudeDeg > 0.0
+                                   altitudeDeg > 0.0
                                        ? "sichtbar"
                                        : "unter dem Horizont",
-                                   result.altitudeDeg > 0.0 ? "visible" : "below the horizon")
+                                   altitudeDeg > 0.0 ? "visible" : "below the horizon")
                   << ")\n"
-                  << localizedText(english, "Alter: ", "Age: ") << result.ageDays << " "
+                  << localizedText(english, "Alter: ", "Age: ") << ageDays << " "
                   << localizedText(english, "Tage seit Neumond", "days since new moon") << "\n"
                   << localizedText(english, "Entfernung: ", "Distance: ")
-                  << std::fixed << std::setprecision(0) << result.distanceKm << " km\n";
+                  << std::fixed << std::setprecision(0) << distanceKm << " km\n";
 
-        printEvent("Mondaufgang: ", "Moonrise: ", result.nextMoonriseJulianDay);
-        printEvent("Monduntergang: ", "Moonset: ", result.nextMoonsetJulianDay);
+        printEvent("Mondaufgang: ", "Moonrise: ", nextMoonriseJulianDay);
+        printEvent("Monduntergang: ", "Moonset: ", nextMoonsetJulianDay);
+        std::cout << localizedText(english, "Mondbesonderheiten im aktuellen Monat:\n",
+                                   "Moon highlights this month:\n");
+        if (moonSpecialEvents.empty()) {
+            std::cout << localizedText(english, "Keine besonderen Ereignisse.\n",
+                                       "No special events.\n");
+        }
+        for (const MoonSpecialEvent& event : moonSpecialEvents) {
+            const std::optional<std::tm> eventTime = localTimeAt(event.julianDay);
+            if (!eventTime) {
+                std::cout << localizedText(english, "Ereigniszeit nicht darstellbar\n",
+                                           "Event time could not be represented\n");
+                continue;
+            }
+            const char* eventName = "";
+            switch (event.type) {
+                case MoonSpecialEventType::MonthlyBlueMoon:
+                    eventName = localizedText(english, "Blue Moon (zweiter Vollmond des Monats)",
+                                              "Blue Moon (second full moon of the month)");
+                    break;
+                case MoonSpecialEventType::SeasonalBlueMoon:
+                    eventName = localizedText(english, "Blue Moon (dritter Vollmond der Jahreszeit)",
+                                              "Blue Moon (third full moon of the season)");
+                    break;
+                case MoonSpecialEventType::Supermoon:
+                    eventName = localizedText(english, "Supermond",
+                                              "Supermoon");
+                    break;
+                case MoonSpecialEventType::PenumbralLunarEclipse:
+                    eventName = localizedText(english, "Halbschatten-Mondfinsternis",
+                                              "Penumbral lunar eclipse");
+                    break;
+                case MoonSpecialEventType::PartialLunarEclipse:
+                    eventName = localizedText(english, "Partielle Mondfinsternis",
+                                              "Partial lunar eclipse");
+                    break;
+                case MoonSpecialEventType::TotalLunarEclipse:
+                    eventName = localizedText(english, "Totale Mondfinsternis",
+                                              "Total lunar eclipse");
+                    break;
+            }
+            std::cout << "  " << std::put_time(&*eventTime, "%x %X")
+                      << " - " << eventName << "\n";
+        }
+        std::cout << "\n" << localizedText(english, "Sonnenhöhe: ", "Solar altitude: ")
+                  << std::setprecision(1) << sunAltitudeDeg << "°\n"
+                  << localizedText(english, "Sonnenentfernung: ", "Solar distance: ")
+                  << std::fixed << std::setprecision(0) << sunDistanceKm << " km\n";
+        printEvent("Sonnenaufgang: ", "Sunrise: ", nextSunriseJulianDay);
+        printEvent("Sonnenuntergang: ", "Sunset: ", nextSunsetJulianDay);
+        printDuration("Tageslänge: ", "Daylight duration: ", daylightSeconds,
+                      daylightChangeSeconds);
+        printDuration("Nachtlänge: ", "Night duration: ", nightSeconds,
+                      nightChangeSeconds);
     }
 }

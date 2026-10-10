@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(moonphase VERSION 0.1.0 LANGUAGES CXX)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" MOONPHASE_VERSION LIMIT_COUNT 1)
+if(NOT MOONPHASE_VERSION MATCHES "^[0-9]+(\\.[0-9]+)?(\\.[0-9]+)?(\\.[0-9]+)?$")
+    message(FATAL_ERROR "VERSION must contain a numeric version (for example, 1.2.3)")
+endif()
+
+project(moonphase VERSION ${MOONPHASE_VERSION} LANGUAGES CXX)
 
 include(GNUInstallDirs)
 

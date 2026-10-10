@@ -271,7 +271,12 @@ int main(int argc, char* argv[]) {
                       << " - " << eventName << "\n";
         }
         std::cout << "\n" << localizedText(english, "Sonnenhöhe: ", "Solar altitude: ")
-                  << std::setprecision(1) << sunAltitudeDeg << "°\n"
+        << std::setprecision(1) << sunAltitudeDeg << "° ("
+        << localizedText(english,
+                         sunAltitudeDeg > 0.0
+                             ? "sichtbar"
+                             : "unter dem Horizont",
+                         sunAltitudeDeg > 0.0 ? "visible" : "below the horizon") << ")\n"
                   << localizedText(english, "Sonnenentfernung: ", "Solar distance: ")
                   << std::fixed << std::setprecision(0) << sunDistanceKm << " km\n";
         printEvent("Sonnenaufgang: ", "Sunrise: ", nextSunriseJulianDay);

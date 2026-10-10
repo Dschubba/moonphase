@@ -1,5 +1,5 @@
 pkgname=moonphase
-pkgver=0.1.1
+pkgver=$(<VERSION)
 pkgrel=1
 pkgdesc='Moon phase and moonrise calculator'
 arch=('x86_64' 'aarch64')
@@ -7,6 +7,7 @@ license=('GPL-3.0-only')
 makedepends=('cmake')
 depends=('gcc-libs')
 source=('CMakeLists.txt'
+        'VERSION'
         'main.cpp'
         'main.h'
         'calculations.cpp'
@@ -14,6 +15,7 @@ source=('CMakeLists.txt'
         'README.md'
         'LICENSE')
 sha256sums=('SKIP'
+            'SKIP'
             'SKIP'
             'SKIP'
             'SKIP'

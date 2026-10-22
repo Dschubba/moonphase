@@ -1,43 +1,47 @@
-# Mondphase
+# Moon Phase
 
-Ein kleines C++-Programm, das anhand des aktuellen Systemdatums die Mondphase
-und den prozentual beleuchteten Anteil der Mondscheibe näherungsweise berechnet.
+*Deutsche Fassung: [README.de.md](README.de.md)*
 
-Die Berechnung bestimmt Position von Mond und Sonne nach Meeus
-(Astronomical Algorithms, Kap. 25 und 47, Hauptkorrekturterme) und berechnet die
-Beleuchtung topozentrisch für den Beobachtungsort. Ohne CLI-Angabe ist dies
-München (47,135125° N, 11,581981° O, 519 m). Zusätzlich wird die Höhe des Mondes
-über dem Horizont ausgegeben. Das Ergebnis ist eine Näherung und berücksichtigt
-keine atmosphärische Refraktion für die aktuelle Mondhöhe.
+A small C++ program that uses the current system date to approximate the moon
+phase and the illuminated percentage of the lunar disk.
 
-Außerdem werden der nächste Mondaufgang und Monduntergang ab dem aktuellen
-Zeitpunkt in lokaler Systemzeit ausgegeben. Als Ereignis gilt der Auf- bzw.
-Untergang des sichtbaren oberen Mondrandes; dafür werden der scheinbare
-Mondradius und eine übliche Refraktionskorrektur am Horizont angenähert. Die
-Zeiten berücksichtigen weder örtliche Horizontabschattung noch aktuelle
-Wetterbedingungen und sind wegen der vereinfachten Mondposition nur Richtwerte.
+The calculation determines the positions of the moon and the sun following Meeus
+(Astronomical Algorithms, ch. 25 and 47, principal correction terms) and
+computes the illumination topocentrically for the observer's location. Without
+a command-line option, this is Munich (47.135125° N, 11.581981° E, 519 m). The
+program also prints the moon's altitude above the horizon and the direction in
+which an observer has to look (azimuth in degrees, measured from north through
+east, plus a 16-point compass direction such as "ESE"). The result is an
+approximation and does not account for atmospheric refraction in the current
+lunar altitude.
 
-Zusätzlich gibt das Programm die aktuelle topozentrische Sonnenhöhe und
--entfernung sowie den nächsten Sonnenaufgang und Sonnenuntergang aus. Die
-Tages- und Nachtlänge beziehen sich auf den aktuellen lokalen Kalendertag und
-werden aus dem scheinbaren Sonnenrand einschließlich einer üblichen
-Horizontrefraktion berechnet. Hinter beiden Werten steht außerdem die
-Veränderung gegenüber dem Vortag. An Tagen mit Polartag oder Polarnacht wird die
-gesamte lokale Tageslänge als Tageslicht beziehungsweise Dunkelheit ausgewiesen. Sonnen- und
-Mondereignisse sind Näherungswerte und berücksichtigen keine örtliche
-Horizontabschattung oder Wetterbedingungen.
+The next moonrise and moonset from the current time onward are also printed in
+local system time. The event is defined as the rising or setting of the visible
+upper limb of the moon; the apparent lunar radius and a standard horizon
+refraction correction are approximated for this. The times account neither for
+local horizon obstructions nor for current weather conditions and, because of
+the simplified lunar position, are only rough estimates.
 
-Für den laufenden lokalen Kalendermonat werden außerdem besondere
-Mondereignisse aufgeführt: Blue Moons als zweiter Vollmond eines Monats oder
-als dritter Vollmond einer Jahreszeit mit vier Vollmonden, Supermonde
-(Vollmondentfernung unter 360.000 km) sowie am Beobachtungsort sichtbare
-Mondfinsternisse. Die Jahreszeiten werden näherungsweise mit den üblichen
-Kalendertagen für Tagundnachtgleichen und Sonnenwenden abgegrenzt; die
-berechneten Ereigniszeiten und Sichtbarkeiten sind ebenfalls Näherungswerte.
+In addition, the program prints the current topocentric solar altitude,
+direction and distance as well as the next sunrise and sunset. Daylight and
+night duration refer to the current local calendar day and are calculated from
+the apparent solar limb including a standard horizon refraction. Both values
+are followed by the change compared with the previous day. On days with polar
+day or polar night, the entire local day is reported as daylight or darkness,
+respectively. Solar and lunar events are approximations and do not account for
+local horizon obstructions or weather conditions.
 
-## Kompilieren und starten
+For the current local calendar month, special lunar events are listed as well:
+Blue Moons as the second full moon of a month or as the third full moon of a
+season with four full moons, supermoons (full moon distance below 360,000 km),
+and lunar eclipses visible from the observer's location. Seasons are
+approximately delimited by the usual calendar dates for equinoxes and
+solstices; the calculated event times and visibilities are approximations as
+well.
 
-Benötigt werden CMake 3.16 oder neuer sowie ein C++17-kompatibler Compiler:
+## Building and running
+
+CMake 3.16 or newer and a C++17-compatible compiler are required:
 
 ```sh
 cmake -S . -B build
@@ -45,39 +49,39 @@ cmake --build build
 ./build/moonphase
 ```
 
-Mit `--location` lassen sich ein oder mehrere Beobachtungsorte angeben. Das
-Argument besteht aus Name, Breitengrad und Längengrad; die Höhe über dem
-Meeresspiegel in Metern ist optional und beträgt standardmäßig 0:
+Use `--location` to specify one or more observer locations. The argument
+consists of name, latitude and longitude; the elevation above sea level in
+meters is optional and defaults to 0:
 
 ```sh
 ./build/moonphase \
-  --location "München,48.1372,11.5756,519" \
+  --location "Munich,48.1372,11.5756,519" \
   --location "Berlin,52.5200,13.4050"
 ```
 
-Breiten- und Längengrade müssen im Bereich -90 bis 90 bzw. -180 bis 180 liegen;
-die Höhe muss mindestens 0 m betragen. Ohne `--location` wird weiterhin der
-Standardort München (47,135125° N, 11,581981° O, 519 m) verwendet.
+Latitude and longitude must be in the range -90 to 90 and -180 to 180,
+respectively; the elevation must be at least 0 m. Without `--location`, the
+default location Munich (47.135125° N, 11.581981° E, 519 m) is used.
 
-## Pakete lokal erstellen
+## Building packages locally
 
-Linux-Pakete installieren das Programm nach `/usr/bin` (im TGZ-Archiv nach
-`usr/bin`); alle Formate enthalten außerdem README und Lizenz. Die zentrale
-Paketversion steht in der Datei `VERSION`; CMake und das Arch-`PKGBUILD` lesen
-sie von dort. Die Arch-Paketrevision `pkgrel` wird weiterhin separat im
-`PKGBUILD` verwaltet.
+Linux packages install the program to `/usr/bin` (to `usr/bin` in the TGZ
+archive); all formats also include the README and license. The central package
+version is stored in the `VERSION` file; CMake and the Arch `PKGBUILD` read it
+from there. The Arch package release `pkgrel` is still maintained separately in
+the `PKGBUILD`.
 
-### Debian/Ubuntu (.deb) und RPM (.rpm)
+### Debian/Ubuntu (.deb) and RPM (.rpm)
 
-Zusätzlich zu CMake und einem C++17-Compiler werden für `.deb` `dpkg-deb` und
-für `.rpm` `rpmbuild` benötigt. Zunächst das Projekt konfigurieren und bauen:
+In addition to CMake and a C++17 compiler, `dpkg-deb` is required for `.deb`
+and `rpmbuild` for `.rpm`. First configure and build the project:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ```
 
-Danach jeweils das gewünschte Paket bauen:
+Then build the desired package:
 
 ```sh
 cpack --config build/CPackConfig.cmake -G DEB -B build/packages
@@ -86,7 +90,7 @@ cpack --config build/CPackConfig.cmake -G RPM -B build/packages
 
 ### Arch Linux
 
-Mit `makepkg` und CMake lässt sich aus dem lokalen Quellcode ein Paket bauen:
+`makepkg` and CMake build a package from the local source code:
 
 ```sh
 makepkg -f
@@ -94,8 +98,8 @@ makepkg -f
 
 ### Windows (NSIS)
 
-Auf Windows werden CMake, ein C++17-Compiler und NSIS benötigt. Nach dem
-Konfigurieren und Bauen erzeugt CPack den Installer:
+On Windows, CMake, a C++17 compiler and NSIS are required. After configuring
+and building, CPack creates the installer:
 
 ```powershell
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -105,8 +109,8 @@ cpack --config build/CPackConfig.cmake -G NSIS -C Release -B build/packages
 
 ### macOS (DMG)
 
-Auf macOS werden CMake und ein C++17-Compiler benötigt. CPack erzeugt das
-DMG-Image:
+On macOS, CMake and a C++17 compiler are required. CPack creates the DMG
+image:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -114,7 +118,7 @@ cmake --build build
 cpack --config build/CPackConfig.cmake -G DragNDrop -B build/packages
 ```
 
-Pakete werden lokal auf der jeweiligen Zielplattform erstellt; GitLab-CI oder
-automatische Veröffentlichungen sind nicht eingerichtet. Unter Linux kann
+Packages are built locally on the respective target platform; GitLab CI and
+automatic releases are not set up. On Linux,
 `cpack --config build/CPackConfig.cmake -G TGZ -B build/packages`
-ein generisches Archiv ohne Debian- oder RPM-Werkzeuge erstellen.
+can create a generic archive without Debian or RPM tools.

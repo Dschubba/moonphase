@@ -6,7 +6,6 @@
 #include <ctime>
 #include <optional>
 #include <stdexcept>
-#include <utility>
 
 #include "main.h"
 
@@ -143,6 +142,22 @@ namespace moonphase {
                      std::sin(lat)}};
         }
 
+        double altitudeOf(const Vec3& direction, const Observer& observer) {
+            return toDegrees(std::asin(std::clamp(
+                dot(direction, observer.up) / length(direction), -1.0, 1.0)));
+        }
+
+        // Azimuth measured from north through east (0° = N, 90° = E). The east and
+        // north components are derived from the zenith vector; both are scaled by
+        // cos(latitude) > 0, which atan2 ignores.
+        double azimuthOf(const Vec3& direction, const Observer& observer) {
+            const Vec3& up = observer.up;
+            const double east = up[0] * direction[1] - up[1] * direction[0];
+            const double north = direction[2] * (up[0] * up[0] + up[1] * up[1]) -
+                                 up[2] * (up[0] * direction[0] + up[1] * direction[1]);
+            return normalize(toDegrees(std::atan2(east, north)), 360.0);
+        }
+
         double apparentLimbAltitude(double julianDay, const ObserverLocation& location,
                                     bool sun) {
             const double t = (julianDay - 2451545.0) / 36525.0;
@@ -154,8 +169,7 @@ namespace moonphase {
             const Observer observer = observerAt(gmst, location);
             const Vec3 bodyFromObserver = subtract(body.equatorial, observer.position);
             const double distance = length(bodyFromObserver);
-            const double geometricAltitude = toDegrees(std::asin(std::clamp(
-                dot(bodyFromObserver, observer.up) / distance, -1.0, 1.0)));
+            const double geometricAltitude = altitudeOf(bodyFromObserver, observer);
             const double radius = sun ? kSunRadiusKm : kMoonRadiusKm;
             const double semidiameter = toDegrees(std::asin(radius / distance));
             return geometricAltitude + semidiameter + kHorizonRefractionDeg;
@@ -204,14 +218,14 @@ namespace moonphase {
                 const double day = kJulianDayAtUnixEpoch + unixTime / 86400.0;
                 return apparentLimbAltitude(day, location, true);
             };
-            const double endSeconds = static_cast<double>(end);
-            double previousSeconds = static_cast<double>(start);
+            const auto endSeconds = static_cast<double>(end);
+            auto previousSeconds = static_cast<double>(start);
             double previousAltitude = altitudeAt(previousSeconds);
             double daylight = 0.0;
-            constexpr double sampleIntervalSeconds = 600.0;
 
             while (previousSeconds < endSeconds) {
-                const double currentSeconds =
+                constexpr double sampleIntervalSeconds = 600.0;
+                const auto currentSeconds =
                     std::min(previousSeconds + sampleIntervalSeconds, endSeconds);
                 const double currentAltitude = altitudeAt(currentSeconds);
                 const bool rising = previousAltitude < 0.0 && currentAltitude >= 0.0;
@@ -575,14 +589,14 @@ namespace moonphase {
         const double phaseAngle = std::atan2(
             sunDistance * sinPsi, moonDistance - sunDistance * cosPsi);
         const double illumination = (1.0 + std::cos(phaseAngle)) * 50.0;
-        const double altitude = toDegrees(std::asin(std::clamp(
-            dot(moonFromObserver, observer.up) / moonDistance, -1.0, 1.0)));
-        const double sunAltitude = toDegrees(std::asin(std::clamp(
-            dot(sunFromObserver, observer.up) / sunDistance, -1.0, 1.0)));
+        const double altitude = altitudeOf(moonFromObserver, observer);
+        const double sunAltitude = altitudeOf(sunFromObserver, observer);
+        const double azimuth = azimuthOf(moonFromObserver, observer);
+        const double sunAzimuth = azimuthOf(sunFromObserver, observer);
         const DaylightSummary daylight = daylightDuration(julianDay, location);
 
-        return {phaseForAge(age), age, illumination, altitude, moonDistance,
-                sunAltitude, sunDistance,
+        return {phaseForAge(age), age, illumination, altitude, azimuth, moonDistance,
+                sunAltitude, sunAzimuth, sunDistance,
                 nextRiseSet(julianDay, true, location, false),
                 nextRiseSet(julianDay, false, location, false),
                 nextRiseSet(julianDay, true, location, true),

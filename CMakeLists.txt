@@ -20,7 +20,7 @@ target_link_libraries(moonphase PRIVATE moonphase_core)
 install(TARGETS moonphase
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(FILES README.md LICENSE
+install(FILES README.md README.de.md LICENSE
     DESTINATION ${CMAKE_INSTALL_DOCDIR}
 )
 

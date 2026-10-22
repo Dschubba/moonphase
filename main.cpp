@@ -8,7 +8,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <vector>
 
 #include "calculations.h"
@@ -29,6 +28,17 @@ namespace {
 
     const char* localizedText(bool english, const char* german, const char* englishText) {
         return english ? englishText : german;
+    }
+
+    const char* compassDirection(const double azimuthDeg, const bool english) {
+        static constexpr const char* directions[][2] = {
+            {"N", "N"}, {"NNO", "NNE"}, {"NO", "NE"}, {"ONO", "ENE"},
+            {"O", "E"}, {"OSO", "ESE"}, {"SO", "SE"}, {"SSO", "SSE"},
+            {"S", "S"}, {"SSW", "SSW"}, {"SW", "SW"}, {"WSW", "WSW"},
+            {"W", "W"}, {"WNW", "WNW"}, {"NW", "NW"}, {"NNW", "NNW"}};
+        const auto& [german, englishText] =
+            directions[static_cast<std::size_t>(std::lround(azimuthDeg / 22.5)) % 16];
+        return localizedText(english, german, englishText);
     }
 
     std::string_view trim(std::string_view value) {
@@ -129,9 +139,9 @@ int main(int argc, char* argv[]) {
     }
 
     const auto now = std::chrono::system_clock::now();
-    const double unixDays =
+    const auto unixDays =
         std::chrono::duration<double>(now.time_since_epoch()).count() / 86400.0;
-    const double julianDay = kJulianDayAtUnixEpoch + unixDays;
+    const auto julianDay = kJulianDayAtUnixEpoch + unixDays;
 
     const std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
     const std::tm* localDatePointer = std::localtime(&currentTime);
@@ -141,7 +151,7 @@ int main(int argc, char* argv[]) {
             "The current date could not be determined.") << "\n";
         return 1;
     }
-    const std::tm localDate = *localDatePointer;
+    const auto localDate = *localDatePointer;
 
     const auto printEvent = [english](const char* germanLabel, const char* englishLabel,
                                       const std::optional<double>& eventDay) {
@@ -151,7 +161,7 @@ int main(int argc, char* argv[]) {
                                        "not within the next 35 days") << "\n";
             return;
         }
-        const std::optional<std::tm> eventTime = localTimeAt(*eventDay);
+        const auto eventTime = localTimeAt(*eventDay);
         if (!eventTime) {
             std::cout << localizedText(english, "Zeitpunkt nicht darstellbar",
                                        "time could not be represented") << "\n";
@@ -162,10 +172,10 @@ int main(int argc, char* argv[]) {
 
     const auto printDuration = [english](const char* germanLabel, const char* englishLabel,
                                          double seconds, double changeSeconds) {
-        const long long totalSeconds = std::llround(seconds);
-        const long long changeTotalSeconds = std::llround(changeSeconds);
-        const long long durationMinutes = totalSeconds / 60;
-        const long long absoluteChange = std::abs(changeTotalSeconds);
+        const auto totalSeconds = std::llround(seconds);
+        const auto changeTotalSeconds = std::llround(changeSeconds);
+        const auto durationMinutes = totalSeconds / 60;
+        const auto absoluteChange = std::abs(changeTotalSeconds);
         const auto printDifference = [english](long long value) {
             std::cout << value / 60 << " "
                       << localizedText(english, "Min. ", "min. ")
@@ -182,16 +192,28 @@ int main(int argc, char* argv[]) {
         std::cout << ")\n" << std::setfill(' ');
     };
 
+    const auto printPosition = [english](const char* germanLabel, const char* englishLabel,
+                                         double altitudeDeg, double azimuthDeg) {
+        const bool visible = altitudeDeg > 0.0;
+        std::cout << localizedText(english, germanLabel, englishLabel)
+                  << std::fixed << std::setprecision(1) << altitudeDeg << "° ("
+                  << localizedText(english, visible ? "sichtbar" : "unter dem Horizont",
+                                   visible ? "visible" : "below the horizon")
+                  << ")\n"
+                  << localizedText(english, "Himmelsrichtung: ", "Direction: ")
+                  << azimuthDeg << "° (" << compassDirection(azimuthDeg, english) << ")\n";
+    };
+
     for (std::size_t i = 0; i < locations.size(); ++i) {
-        const ObserverLocation& location = locations[i];
+        const auto& location = locations[i];
         const auto
-        [phase, ageDays, illuminationPercent, altitudeDeg, distanceKm,
-         sunAltitudeDeg, sunDistanceKm, nextMoonriseJulianDay, nextMoonsetJulianDay,
+        [phase, ageDays, illuminationPercent, altitudeDeg, azimuthDeg, distanceKm,
+         sunAltitudeDeg, sunAzimuthDeg, sunDistanceKm, nextMoonriseJulianDay, nextMoonsetJulianDay,
          nextSunriseJulianDay, nextSunsetJulianDay, daylightSeconds, nightSeconds,
          daylightChangeSeconds, nightChangeSeconds, moonSpecialEvents] =
             calculate(julianDay, location);
-        const char* latitudeDirection = location.latitudeDeg < 0.0 ? "S" : "N";
-        const char* longitudeDirection = location.longitudeDeg < 0.0
+        const auto* latitudeDirection = location.latitudeDeg < 0.0 ? "S" : "N";
+        const auto* longitudeDirection = location.longitudeDeg < 0.0
             ? "W"
             : localizedText(english, "O", "E");
         if (i > 0) {
@@ -210,17 +232,10 @@ int main(int argc, char* argv[]) {
                   << "\n"
                   << std::setprecision(1)
                   << localizedText(english, "Beleuchtung: ", "Illumination: ")
-                  << illuminationPercent << " %\n"
-                  << localizedText(english, "Höhe über dem Horizont: ",
-                                   "Altitude above horizon: ")
-                  << altitudeDeg << "° ("
-                  << localizedText(english,
-                                   altitudeDeg > 0.0
-                                       ? "sichtbar"
-                                       : "unter dem Horizont",
-                                   altitudeDeg > 0.0 ? "visible" : "below the horizon")
-                  << ")\n"
-                  << localizedText(english, "Alter: ", "Age: ") << ageDays << " "
+                  << illuminationPercent << " %\n";
+        printPosition("Höhe über dem Horizont: ", "Altitude above horizon: ",
+                      altitudeDeg, azimuthDeg);
+        std::cout << localizedText(english, "Alter: ", "Age: ") << ageDays << " "
                   << localizedText(english, "Tage seit Neumond", "days since new moon") << "\n"
                   << localizedText(english, "Entfernung: ", "Distance: ")
                   << std::fixed << std::setprecision(0) << distanceKm << " km\n";
@@ -270,14 +285,9 @@ int main(int argc, char* argv[]) {
             std::cout << "  " << std::put_time(&*eventTime, "%x %X")
                       << " - " << eventName << "\n";
         }
-        std::cout << "\n" << localizedText(english, "Sonnenhöhe: ", "Solar altitude: ")
-        << std::setprecision(1) << sunAltitudeDeg << "° ("
-        << localizedText(english,
-                         sunAltitudeDeg > 0.0
-                             ? "sichtbar"
-                             : "unter dem Horizont",
-                         sunAltitudeDeg > 0.0 ? "visible" : "below the horizon") << ")\n"
-                  << localizedText(english, "Sonnenentfernung: ", "Solar distance: ")
+        std::cout << "\n";
+        printPosition("Sonnenhöhe: ", "Solar altitude: ", sunAltitudeDeg, sunAzimuthDeg);
+        std::cout << localizedText(english, "Sonnenentfernung: ", "Solar distance: ")
                   << std::fixed << std::setprecision(0) << sunDistanceKm << " km\n";
         printEvent("Sonnenaufgang: ", "Sunrise: ", nextSunriseJulianDay);
         printEvent("Sonnenuntergang: ", "Sunset: ", nextSunsetJulianDay);

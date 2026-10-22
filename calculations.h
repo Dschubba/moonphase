@@ -37,8 +37,10 @@ namespace moonphase {
         double ageDays;
         double illuminationPercent;
         double altitudeDeg;
+        double azimuthDeg;
         double distanceKm;
         double sunAltitudeDeg;
+        double sunAzimuthDeg;
         double sunDistanceKm;
         std::optional<double> nextMoonriseJulianDay;
         std::optional<double> nextMoonsetJulianDay;

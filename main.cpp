@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
         [phase, ageDays, illuminationPercent, altitudeDeg, azimuthDeg, distanceKm,
          sunAltitudeDeg, sunAzimuthDeg, sunDistanceKm, nextMoonriseJulianDay, nextMoonsetJulianDay,
          nextSunriseJulianDay, nextSunsetJulianDay, daylightSeconds, nightSeconds,
-         daylightChangeSeconds, nightChangeSeconds, moonSpecialEvents] =
+         daylightChangeSeconds, nightChangeSeconds, moonSpecialEvents, nextPhase] =
             calculate(julianDay, location);
         const auto* latitudeDirection = location.latitudeDeg < 0.0 ? "S" : "N";
         const auto* longitudeDirection = location.longitudeDeg < 0.0
@@ -229,8 +229,16 @@ int main(int argc, char* argv[]) {
                   << localizedText(english, "Aktuelle Mondphase: ", "Current moon phase: ")
                   << phase.symbol << " "
                   << localizedText(english, phase.germanName, phase.englishName)
-                  << "\n"
-                  << std::setprecision(1)
+                  << "\n";
+        if (nextPhase) {
+            std::cout << localizedText(english, "Nächste Mondphase: ", "Next moon phase: ")
+                      << nextPhase->phase.symbol << " "
+                      << localizedText(english, nextPhase->phase.germanName,
+                                       nextPhase->phase.englishName)
+                      << " - ";
+            printEvent("", "", nextPhase->julianDay);
+        }
+        std::cout << std::setprecision(1)
                   << localizedText(english, "Beleuchtung: ", "Illumination: ")
                   << illuminationPercent << " %\n";
         printPosition("Höhe über dem Horizont: ", "Altitude above horizon: ",

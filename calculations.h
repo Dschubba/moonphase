@@ -32,6 +32,11 @@ namespace moonphase {
         double julianDay;
     };
 
+    struct NextPhase {
+        Phase phase;
+        double julianDay;
+    };
+
     struct CalculationResult {
         Phase phase;
         double ageDays;
@@ -51,6 +56,7 @@ namespace moonphase {
         double daylightChangeSeconds;
         double nightChangeSeconds;
         std::vector<MoonSpecialEvent> moonSpecialEvents;
+        std::optional<NextPhase> nextPhase;
     };
 
     CalculationResult calculate(double julianDay, const ObserverLocation& observer);

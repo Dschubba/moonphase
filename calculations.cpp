@@ -349,6 +349,37 @@ namespace moonphase {
             return events;
         }
 
+        struct PhaseDefinition {
+            double startAge;
+            const char* germanName;
+            const char* englishName;
+            const char* symbol;
+        };
+        constexpr std::array<PhaseDefinition, 8> kPhases{{
+            {kWaningCrescentEnd, "Neumond", "New Moon", "🌑"},
+            {kNewMoonEnd, "Zunehmende Sichel", "Waxing Crescent", "🌒"},
+            {kWaxingCrescentEnd, "Erstes Viertel", "First Quarter", "🌓"},
+            {kFirstQuarterEnd, "Zunehmender Mond", "Waxing Gibbous", "🌔"},
+            {kWaxingGibbousEnd, "Vollmond", "Full Moon", "🌕"},
+            {kFullMoonEnd, "Abnehmender Mond", "Waning Gibbous", "🌖"},
+            {kWaningGibbousEnd, "Letztes Viertel", "Last Quarter", "🌗"},
+            {kLastQuarterEnd, "Abnehmende Sichel", "Waning Crescent", "🌘"},
+        }};
+
+        std::optional<NextPhase> nextPhase(double julianDay) {
+            std::optional<NextPhase> next;
+            for (const PhaseDefinition& phase : kPhases) {
+                const std::vector<double> events = phaseEvents(
+                    julianDay, julianDay + kSynodicMonth + 1.0,
+                    phase.startAge / kSynodicMonth * 360.0);
+                if (!events.empty() && (!next || events.front() < next->julianDay)) {
+                    next = NextPhase{{phase.germanName, phase.englishName, phase.symbol},
+                                     events.front()};
+                }
+            }
+            return next;
+        }
+
         std::time_t localDateTime(int year, int month, int day) {
             std::tm date{};
             date.tm_year = year - 1900;
@@ -535,32 +566,15 @@ namespace moonphase {
         }
 
         Phase phaseForAge(double age) {
-            struct PhaseDefinition {
-                double startAge;
-                const char* germanName;
-                const char* englishName;
-                const char* symbol;
-            };
-            constexpr std::array<PhaseDefinition, 8> phases{{
-                {kWaningCrescentEnd, "Neumond", "New Moon", "🌑"},
-                {kNewMoonEnd, "Zunehmende Sichel", "Waxing Crescent", "🌒"},
-                {kWaxingCrescentEnd, "Erstes Viertel", "First Quarter", "🌓"},
-                {kFirstQuarterEnd, "Zunehmender Mond", "Waxing Gibbous", "🌔"},
-                {kWaxingGibbousEnd, "Vollmond", "Full Moon", "🌕"},
-                {kFullMoonEnd, "Abnehmender Mond", "Waning Gibbous", "🌖"},
-                {kWaningGibbousEnd, "Letztes Viertel", "Last Quarter", "🌗"},
-                {kLastQuarterEnd, "Abnehmende Sichel", "Waning Crescent", "🌘"},
-            }};
-
-            if (age < phases[1].startAge || age >= phases[0].startAge) {
-                return {phases[0].germanName, phases[0].englishName, phases[0].symbol};
+            if (age < kPhases[1].startAge || age >= kPhases[0].startAge) {
+                return {kPhases[0].germanName, kPhases[0].englishName, kPhases[0].symbol};
             }
-            for (std::size_t i = phases.size(); i-- > 1;) {
-                if (age >= phases[i].startAge) {
-                    return {phases[i].germanName, phases[i].englishName, phases[i].symbol};
+            for (std::size_t i = kPhases.size(); i-- > 1;) {
+                if (age >= kPhases[i].startAge) {
+                    return {kPhases[i].germanName, kPhases[i].englishName, kPhases[i].symbol};
                 }
             }
-            return {phases[0].germanName, phases[0].englishName, phases[0].symbol};
+            return {kPhases[0].germanName, kPhases[0].englishName, kPhases[0].symbol};
         }
     }
 
@@ -603,7 +617,8 @@ namespace moonphase {
                 nextRiseSet(julianDay, false, location, true),
                 daylight.daylightSeconds, daylight.nightSeconds,
                 daylight.daylightChangeSeconds, daylight.nightChangeSeconds,
-                moonSpecialEvents(julianDay, location)};
+                moonSpecialEvents(julianDay, location),
+                nextPhase(julianDay)};
     }
 
     CalculationResult calculate(double julianDay) {

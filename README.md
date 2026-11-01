@@ -2,6 +2,8 @@
 
 *Deutsche Fassung: [README.de.md](README.de.md)*
 
+[Download the latest release for Linux, Windows or macOS](https://github.com/Dschubba/moonphase/releases/latest).
+
 A small C++ program that uses the current system date to approximate the moon
 phase and the illuminated percentage of the lunar disk.
 
@@ -118,7 +120,8 @@ cmake --build build
 cpack --config build/CPackConfig.cmake -G DragNDrop -B build/packages
 ```
 
-Packages are built locally on the respective target platform; GitLab CI and
-automatic releases are not set up. On Linux,
+Release packages for Linux (TGZ), Windows (NSIS installer) and macOS (DMG) are
+built automatically and published on the
+[releases page](https://github.com/Dschubba/moonphase/releases/latest). On Linux,
 `cpack --config build/CPackConfig.cmake -G TGZ -B build/packages`
 can create a generic archive without Debian or RPM tools.

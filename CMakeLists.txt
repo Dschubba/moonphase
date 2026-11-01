@@ -10,7 +10,6 @@ project(moonphase VERSION ${MOONPHASE_VERSION} LANGUAGES CXX)
 include(GNUInstallDirs)
 
 add_library(moonphase_core calculations.cpp)
-target_include_directories(moonphase_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(moonphase_core PUBLIC cxx_std_17)
 
 add_executable(moonphase main.cpp)

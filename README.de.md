@@ -2,6 +2,8 @@
 
 *English version: [README.md](README.md)*
 
+[Aktuelle Version für Linux, Windows oder macOS herunterladen](https://github.com/Dschubba/moonphase/releases/latest).
+
 Ein kleines C++-Programm, das anhand des aktuellen Systemdatums die Mondphase
 und den prozentual beleuchteten Anteil der Mondscheibe näherungsweise berechnet.
 
@@ -118,7 +120,9 @@ cmake --build build
 cpack --config build/CPackConfig.cmake -G DragNDrop -B build/packages
 ```
 
-Pakete werden lokal auf der jeweiligen Zielplattform erstellt; GitLab-CI oder
-automatische Veröffentlichungen sind nicht eingerichtet. Unter Linux kann
+Releasepakete für Linux (TGZ), Windows (NSIS-Installer) und macOS (DMG) werden
+automatisch erstellt und auf der
+[Release-Seite](https://github.com/Dschubba/moonphase/releases/latest) veröffentlicht.
+Unter Linux kann
 `cpack --config build/CPackConfig.cmake -G TGZ -B build/packages`
 ein generisches Archiv ohne Debian- oder RPM-Werkzeuge erstellen.

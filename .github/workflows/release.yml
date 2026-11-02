@@ -48,6 +48,7 @@ jobs:
         with:
           name: moonphase-${{ runner.os }}
           path: dist/*
+          compression-level: 0
           if-no-files-found: error
 
   publish:

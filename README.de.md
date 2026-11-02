@@ -69,9 +69,9 @@ Standardort München (47,135125° N, 11,581981° O, 519 m) verwendet.
 
 Linux-Pakete installieren das Programm nach `/usr/bin` (im TGZ-Archiv nach
 `usr/bin`); alle Formate enthalten außerdem README und Lizenz. Die zentrale
-Paketversion steht in der Datei `VERSION`; CMake und das Arch-`PKGBUILD` lesen
-sie von dort. Die Arch-Paketrevision `pkgrel` wird weiterhin separat im
-`PKGBUILD` verwaltet.
+Paketversion steht in der Datei `moonphase-version.txt`; CMake und das
+Arch-`PKGBUILD` lesen sie von dort. Die Arch-Paketrevision `pkgrel` wird
+weiterhin separat im `PKGBUILD` verwaltet.
 
 ### Debian/Ubuntu (.deb) und RPM (.rpm)
 

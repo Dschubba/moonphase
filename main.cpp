@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
     };
 
     const auto printDuration = [english](const char* germanLabel, const char* englishLabel,
-                                         double seconds, double changeSeconds) {
+                                         const double seconds, const double changeSeconds) {
         const auto totalSeconds = std::llround(seconds);
         const auto changeTotalSeconds = std::llround(changeSeconds);
         const auto durationMinutes = totalSeconds / 60;
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
     };
 
     const auto printPosition = [english](const char* germanLabel, const char* englishLabel,
-                                         double altitudeDeg, double azimuthDeg) {
+                                         const double altitudeDeg, const double azimuthDeg) {
         const bool visible = altitudeDeg > 0.0;
         std::cout << localizedText(english, germanLabel, englishLabel)
                   << std::fixed << std::setprecision(1) << altitudeDeg << "° ("

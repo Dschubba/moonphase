@@ -26,8 +26,6 @@ jobs:
             package: DEB
           - os: windows-latest
             package: NSIS
-          - os: arch-latest
-            package: TGZ
 
     steps:
       - uses: actions/checkout@v4

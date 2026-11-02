@@ -69,9 +69,9 @@ default location Munich (47.135125° N, 11.581981° E, 519 m) is used.
 
 Linux packages install the program to `/usr/bin` (to `usr/bin` in the TGZ
 archive); all formats also include the README and license. The central package
-version is stored in the `VERSION` file; CMake and the Arch `PKGBUILD` read it
-from there. The Arch package release `pkgrel` is still maintained separately in
-the `PKGBUILD`.
+version is stored in the `moonphase-version.txt` file; CMake and the Arch
+`PKGBUILD` read it from there. The Arch package release `pkgrel` is still
+maintained separately in the `PKGBUILD`.
 
 ### Debian/Ubuntu (.deb) and RPM (.rpm)
 

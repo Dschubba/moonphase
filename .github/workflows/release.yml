@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to create or update
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            package: DEB
+          - os: windows-latest
+            package: NSIS
+          - os: arch-latest
+            package: TGZ
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        run: choco install nsis --no-progress -y
+        shell: powershell
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release --parallel
+        shell: bash
+      - name: Package
+        run: cpack --config build/CPackConfig.cmake -G "${{ matrix.package }}" -C Release -B dist
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moonphase-${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          [[ "$TAG" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]]
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes --target "$GITHUB_SHA"
+          gh release upload "$TAG" dist/* --clobber

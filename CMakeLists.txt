@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/MOONPHASE_VERSION" MOONPHASE_VERSION LIMIT_COUNT 1)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/moonphase-version.txt" MOONPHASE_VERSION LIMIT_COUNT 1)
 if(NOT MOONPHASE_VERSION MATCHES "^[0-9]+(\\.[0-9]+)?(\\.[0-9]+)?(\\.[0-9]+)?$")
     message(FATAL_ERROR "VERSION must contain a numeric version (for example, 1.2.3)")
 endif()

@@ -32,6 +32,18 @@ namespace moonphase {
         double julianDay;
     };
 
+    enum class SunSpecialEventType {
+        MarchEquinox,
+        JuneSolstice,
+        SeptemberEquinox,
+        DecemberSolstice
+    };
+
+    struct SunSpecialEvent {
+        SunSpecialEventType type;
+        double julianDay;
+    };
+
     struct NextPhase {
         Phase phase;
         double julianDay;
@@ -57,6 +69,7 @@ namespace moonphase {
         double nightChangeSeconds;
         std::vector<MoonSpecialEvent> moonSpecialEvents;
         std::optional<NextPhase> nextPhase;
+        std::vector<SunSpecialEvent> sunSpecialEvents;
     };
 
     CalculationResult calculate(double julianDay, const ObserverLocation& observer);

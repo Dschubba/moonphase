@@ -389,8 +389,10 @@ namespace moonphase {
             return std::mktime(&date);
         }
 
-        std::vector<MoonSpecialEvent> moonSpecialEvents(
-            double julianDay, const ObserverLocation& location) {
+        // Besondere Mondereignisse im lokalen Kalendermonat, der monthOffset Monate
+        // nach dem Monat von julianDay liegt.
+        std::vector<MoonSpecialEvent> moonSpecialEventsInMonth(
+            double julianDay, const ObserverLocation& location, int monthOffset) {
             const auto localTimestamp = static_cast<std::time_t>(
                 (julianDay - kJulianDayAtUnixEpoch) * 86400.0);
             const std::tm* localDatePointer = std::localtime(&localTimestamp);
@@ -401,11 +403,13 @@ namespace moonphase {
 
             std::tm monthStart = localDate;
             monthStart.tm_mday = 1;
+            monthStart.tm_mon += monthOffset;
             monthStart.tm_hour = 0;
             monthStart.tm_min = 0;
             monthStart.tm_sec = 0;
             monthStart.tm_isdst = -1;
             const std::time_t monthStartTime = std::mktime(&monthStart);
+            const int monthStartYear = monthStart.tm_year + 1900;
             std::tm monthEnd = monthStart;
             ++monthEnd.tm_mon;
             monthEnd.tm_isdst = -1;
@@ -453,8 +457,7 @@ namespace moonphase {
             constexpr std::array<std::array<int, 2>, 4> seasons{{
                 {{2, 20}}, {{5, 21}}, {{8, 22}}, {{11, 21}}
             }};
-            for (int year = localDate.tm_year + 1899;
-                 year <= localDate.tm_year + 1901; ++year) {
+            for (int year = monthStartYear - 1; year <= monthStartYear + 1; ++year) {
                 for (const auto& season : seasons) {
                     const std::time_t boundary =
                         localDateTime(year, season[0], season[1]);
@@ -565,6 +568,67 @@ namespace moonphase {
             return specialEvents;
         }
 
+        // Die nächsten zwei besonderen Mondereignisse ab julianDay (max. 5 Jahre Suche).
+        std::vector<MoonSpecialEvent> nextMoonSpecialEvents(
+            double julianDay, const ObserverLocation& location) {
+            constexpr std::size_t wanted = 2;
+            constexpr int searchMonths = 60;
+            std::vector<MoonSpecialEvent> result;
+            for (int offset = 0; offset < searchMonths && result.size() < wanted; ++offset) {
+                for (const MoonSpecialEvent& event :
+                     moonSpecialEventsInMonth(julianDay, location, offset)) {
+                    if (event.julianDay >= julianDay && result.size() < wanted) {
+                        result.push_back(event);
+                    }
+                }
+            }
+            return result;
+        }
+
+        double sunLongitudeOffset(double julianDay, double targetDeg) {
+            const double t = (julianDay - 2451545.0) / 36525.0;
+            const Body sun = sunPosition(t, 23.439291 - 0.0130042 * t);
+            return normalize(sun.eclipticLongitude - targetDeg + 180.0, 360.0) - 180.0;
+        }
+
+        // Die nächsten zwei Tagundnachtgleichen bzw. Sonnenwenden ab julianDay.
+        std::vector<SunSpecialEvent> nextSunSpecialEvents(double julianDay) {
+            constexpr std::array<SunSpecialEventType, 4> types{{
+                SunSpecialEventType::MarchEquinox, SunSpecialEventType::JuneSolstice,
+                SunSpecialEventType::SeptemberEquinox, SunSpecialEventType::DecemberSolstice}};
+            std::vector<SunSpecialEvent> events;
+            for (std::size_t i = 0; i < types.size(); ++i) {
+                const double target = 90.0 * static_cast<double>(i);
+                double previousDay = julianDay;
+                double previousOffset = sunLongitudeOffset(previousDay, target);
+                for (double day = julianDay + 1.0; day <= julianDay + 400.0; day += 1.0) {
+                    const double offset = sunLongitudeOffset(day, target);
+                    if (previousOffset < 0.0 && offset >= 0.0) {
+                        double low = previousDay;
+                        double high = day;
+                        for (int iteration = 0; iteration < 40; ++iteration) {
+                            const double middle = (low + high) / 2.0;
+                            if (sunLongitudeOffset(middle, target) >= 0.0) {
+                                high = middle;
+                            } else {
+                                low = middle;
+                            }
+                        }
+                        events.push_back({types[i], (low + high) / 2.0});
+                        break;
+                    }
+                    previousDay = day;
+                    previousOffset = offset;
+                }
+            }
+            std::sort(events.begin(), events.end(),
+                      [](const SunSpecialEvent& a, const SunSpecialEvent& b) {
+                          return a.julianDay < b.julianDay;
+                      });
+            events.resize(std::min<std::size_t>(events.size(), 2));
+            return events;
+        }
+
         Phase phaseForAge(double age) {
             if (age < kPhases[1].startAge || age >= kPhases[0].startAge) {
                 return {kPhases[0].germanName, kPhases[0].englishName, kPhases[0].symbol};
@@ -617,8 +681,9 @@ namespace moonphase {
                 nextRiseSet(julianDay, false, location, true),
                 daylight.daylightSeconds, daylight.nightSeconds,
                 daylight.daylightChangeSeconds, daylight.nightChangeSeconds,
-                moonSpecialEvents(julianDay, location),
-                nextPhase(julianDay)};
+                nextMoonSpecialEvents(julianDay, location),
+                nextPhase(julianDay),
+                nextSunSpecialEvents(julianDay)};
     }
 
     CalculationResult calculate(double julianDay) {

@@ -31,13 +31,14 @@ day or polar night, the entire local day is reported as daylight or darkness,
 respectively. Solar and lunar events are approximations and do not account for
 local horizon obstructions or weather conditions.
 
-For the current local calendar month, special lunar events are listed as well:
+The next two special lunar events (searching up to five years ahead) are listed as well:
 Blue Moons as the second full moon of a month or as the third full moon of a
 season with four full moons, supermoons (full moon distance below 360,000 km),
 and lunar eclipses visible from the observer's location. Seasons are
 approximately delimited by the usual calendar dates for equinoxes and
 solstices; the calculated event times and visibilities are approximations as
-well.
+well. In addition, the next two equinoxes or solstices are listed as special solar
+events.
 
 ## Building and running
 

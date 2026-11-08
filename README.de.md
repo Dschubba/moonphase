@@ -31,13 +31,14 @@ gesamte lokale Tageslänge als Tageslicht beziehungsweise Dunkelheit ausgewiesen
 Mondereignisse sind Näherungswerte und berücksichtigen keine örtliche
 Horizontabschattung oder Wetterbedingungen.
 
-Für den laufenden lokalen Kalendermonat werden außerdem besondere
-Mondereignisse aufgeführt: Blue Moons als zweiter Vollmond eines Monats oder
+Die nächsten zwei besonderen Mondereignisse (Suche bis zu fünf Jahre voraus)
+werden außerdem aufgeführt: Blue Moons als zweiter Vollmond eines Monats oder
 als dritter Vollmond einer Jahreszeit mit vier Vollmonden, Supermonde
 (Vollmondentfernung unter 360.000 km) sowie am Beobachtungsort sichtbare
 Mondfinsternisse. Die Jahreszeiten werden näherungsweise mit den üblichen
 Kalendertagen für Tagundnachtgleichen und Sonnenwenden abgegrenzt; die
-berechneten Ereigniszeiten und Sichtbarkeiten sind ebenfalls Näherungswerte.
+berechneten Ereigniszeiten und Sichtbarkeiten sind ebenfalls Näherungswerte. Zusätzlich werden die nächsten zwei Tagundnachtgleichen
+bzw. Sonnenwenden als besondere Sonnenereignisse ausgegeben.
 
 ## Kompilieren und starten
 

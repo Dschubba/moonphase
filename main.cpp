@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
         [phase, ageDays, illuminationPercent, altitudeDeg, azimuthDeg, distanceKm,
          sunAltitudeDeg, sunAzimuthDeg, sunDistanceKm, nextMoonriseJulianDay, nextMoonsetJulianDay,
          nextSunriseJulianDay, nextSunsetJulianDay, daylightSeconds, nightSeconds,
-         daylightChangeSeconds, nightChangeSeconds, moonSpecialEvents, nextPhase] =
+         daylightChangeSeconds, nightChangeSeconds, moonSpecialEvents, nextPhase, sunSpecialEvents] =
             calculate(julianDay, location);
         const auto* latitudeDirection = location.latitudeDeg < 0.0 ? "S" : "N";
         const auto* longitudeDirection = location.longitudeDeg < 0.0
@@ -250,11 +250,11 @@ int main(int argc, char* argv[]) {
 
         printEvent("Mondaufgang: ", "Moonrise: ", nextMoonriseJulianDay);
         printEvent("Monduntergang: ", "Moonset: ", nextMoonsetJulianDay);
-        std::cout << localizedText(english, "Mondbesonderheiten im aktuellen Monat:\n",
-                                   "Moon highlights this month:\n");
+        std::cout << localizedText(english, "Nächste Mondbesonderheiten:\n",
+                                   "Next moon highlights:\n");
         if (moonSpecialEvents.empty()) {
-            std::cout << localizedText(english, "Keine besonderen Ereignisse.\n",
-                                       "No special events.\n");
+            std::cout << localizedText(english, "Keine besonderen Ereignisse in den nächsten 5 Jahren.\n",
+                                       "No special events within the next 5 years.\n");
         }
         for (const MoonSpecialEvent& event : moonSpecialEvents) {
             const std::optional<std::tm> eventTime = localTimeAt(event.julianDay);
@@ -303,5 +303,31 @@ int main(int argc, char* argv[]) {
                       daylightChangeSeconds);
         printDuration("Nachtlänge: ", "Night duration: ", nightSeconds,
                       nightChangeSeconds);
+        std::cout << localizedText(english, "Nächste Sonnenbesonderheiten:\n",
+                                   "Next sun highlights:\n");
+        for (const SunSpecialEvent& event : sunSpecialEvents) {
+            const std::optional<std::tm> eventTime = localTimeAt(event.julianDay);
+            if (!eventTime) {
+                continue;
+            }
+            const char* eventName = "";
+            switch (event.type) {
+                case SunSpecialEventType::MarchEquinox:
+                    eventName = localizedText(english, "Frühlings-Tagundnachtgleiche",
+                                              "March equinox");
+                    break;
+                case SunSpecialEventType::JuneSolstice:
+                    eventName = localizedText(english, "Sommersonnenwende", "June solstice");
+                    break;
+                case SunSpecialEventType::SeptemberEquinox:
+                    eventName = localizedText(english, "Herbst-Tagundnachtgleiche",
+                                              "September equinox");
+                    break;
+                case SunSpecialEventType::DecemberSolstice:
+                    eventName = localizedText(english, "Wintersonnenwende", "December solstice");
+                    break;
+            }
+            std::cout << "  " << std::put_time(&*eventTime, "%x %X") << " - " << eventName << "\n";
+        }
     }
 }
